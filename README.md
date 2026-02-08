@@ -1,16 +1,30 @@
-# kiphoto
+# 🐸 Kippy (Keep Happy)
 
-A new Flutter project.
+**Kippy** adalah aplikasi *mobile photo sharing* yang bertujuan untuk menyebarkan kebahagiaan melalui foto dan meme lucu. Terinspirasi dari platform komunitas seperti Lahelu, Kippy dibangun sebagai *Final Project Checkpoint 1* bootcamp Dibimbing.id.
 
-## Getting Started
+Aplikasi ini dikembangkan menggunakan **Flutter** dengan penerapan **Clean Architecture** dan **BLoC State Management** untuk memastikan performa yang solid dan kode yang mudah dikelola.
 
-This project is a starting point for a Flutter application.
+## 📱 Fitur Utama (Features)
 
-A few resources to get you started if this is your first Flutter project:
+Sesuai dengan spesifikasi *Photo Sharing API*, Kippy memiliki fitur lengkap:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+* **🔐 Authentication:** Login & Register pengguna baru.
+* **🏠 Feed Timeline:** Melihat postingan foto/meme terbaru dari pengguna lain.
+* **📸 Upload:** Membagikan momen atau meme lucu (Post) dan cerita sesaat (Story).
+* **❤️ Interaction:** Memberikan *Like* dan melihat komentar.
+* **👥 Social:** Fitur *Follow* dan *Following* antar pengguna.
+* **👤 User Profile:** Kustomisasi profil dan galeri postingan pribadi.
+* **💾 Local Storage:** Penyimpanan sesi login otomatis.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ Tech Stack & Tools
+
+* **Framework:** [Flutter](https://flutter.dev/) (Dart)
+* **State Management:** [Flutter BLoC](https://pub.dev/packages/flutter_bloc)
+* **Architecture:** Clean Architecture (Domain, Data, Presentation Layer)
+* **Networking:** [Dio](https://pub.dev/packages/dio) (dengan Interceptors)
+* **Local Storage:** [Shared Preferences](https://pub.dev/packages/shared_preferences)
+* **UI/UX:** Custom Widgets, Animations, Google Fonts.
+
+## 📂 Struktur Proyek (Clean Architecture)
+
+Kippy memisahkan logic bisnis dan UI secara tegas:
