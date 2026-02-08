@@ -45,7 +45,7 @@ lib/
 │   ├── pages/          # Halaman Screen (Login, Home, Profile, Upload)
 │   └── widgets/        # Widget reusable (Button, Input, Card)
 └── main.dart           # Entry point
-
+```
 ## 🚀 Cara Menjalankan (Installation)
 
 1.  **Clone repository ini:**
