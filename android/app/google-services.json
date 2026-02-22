@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "60254233745",
+    "project_id": "kippy-c3228",
+    "storage_bucket": "kippy-c3228.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:60254233745:android:722876389d813b81c54b30",
+        "android_client_info": {
+          "package_name": "com.example.kippy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfRTMkz88_UIpl0xMGse_CQPiXYiC8kik"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
