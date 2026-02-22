@@ -1,101 +1,132 @@
-# Kippy - Photo & Meme Sharing App 🐸
+# 🐸 Kippy (Keep Happy) - Photo Sharing App
 
-Kippy is a vibrant, community-driven photo and meme sharing application built with Flutter. It allows users to login, register, scroll through a dynamic feed, explore content by genre, engage with posts through likes and comments, and manage their personal profiles. 
+[![Video Demo](https://img.shields.io/badge/YouTube-Watch_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/pJ1bkkJKyr8)
 
-## 🚀 Features
+**Kippy** adalah aplikasi *mobile photo sharing* yang ceria dan berbasis komunitas, bertujuan untuk menyebarkan kebahagiaan melalui foto dan foto lucu. Dibangun sebagai **Final Project Bootcamp Mobile Apps Dibimbing.id**, Kippy mengedepankan performa yang solid dengan antarmuka yang modern dan interaktif.
 
-*   **Authentication**: User login and registration using Firebase Authentication.
-*   **Dynamic Feed**: Infinite scrolling home feed with immediate post updates.
-*   **Explore & Search**: Discover new content filtered by genre or search queries.
-*   **Interactions**: Like, save/bookmark, and comment on posts using a modern bottom-sheet UI.
-*   **Profile Management**: View user posts, bookmarks, and edit profile details.
-*   **Activity Notifications**: Stay updated with recent likes and follows.
-*   **Custom UI/UX**: Clean "broken white" aesthetic with engaging full-screen image viewing and zoom capabilities.
-*   **Swipe Navigation**: Seamless PageView and BottomNavigationBar navigation flow.
+Aplikasi ini dikembangkan menggunakan **Flutter** dengan penerapan **Clean Architecture** (Feature-First) dan **BLoC State Management** untuk memastikan kode yang mudah dikelola, diuji, dan diskalakan.
 
-## 🏗 Architecture
+---
 
-This project strictly adheres to **Clean Architecture** principles to separate concerns, improve testability, and maintain scalability. The codebase is divided into three main layers:
+## 🎥 Video Demo & Simulasi
+Penasaran bagaimana Kippy bekerja? Lihat video simulasi penggunaan aplikasinya di sini:
+👉 **[Tonton Demo Kippy di YouTube](https://youtu.be/pJ1bkkJKyr8)**
 
-1.  **Domain (Core Business Logic)**
-    *   **Entities**: Independent core business objects (`User`, `Post`).
-    *   **Use Cases**: Application-specific business rules (`Login`, `GetFeedPosts`).
-    *   **Repositories (Abstract)**: Interfaces for data access.
+---
 
-2.  **Data (External Interfaces & Persistence)**
-    *   **Models**: Data transfer objects (DTOs) that extend Entities (e.g., `UserModel` with `fromJson`).
-    *   **Data Sources**: Interfaces for remote (API/Firebase) and local (Hive/SharedPreferences) data access.
-    *   **Repositories (Implementation)**: Concrete implementations of Domain repository interfaces.
+## 🚀 Fitur Utama (Core Features)
 
-3.  **Presentation (UI & State Management)**
-    *   **BLoC**: Business Logic Components bridging the UI and Use Cases.
-    *   **Pages/Widgets**: Flutter UI components reacting to BLoC states.
+Sesuai dengan spesifikasi *Photo Sharing API* & objektif tugas:
 
-## 🛠 Tech Stack & Libraries
+* **🔐 Authentication:** Login & Register pengguna baru secara aman.
+* **🏠 Dynamic Feed:** *Infinite scrolling* (Lazy Loading) untuk melihat postingan foto/meme terbaru dari pengguna lain di beranda.
+* **🔍 Explore & Search:** Halaman *grid view* untuk menemukan konten baru dan inspirasi.
+* **📸 Post & Story Creation:** Bagikan momen atau meme lucu dengan *caption* menarik.
+* **❤️ Social Interactions:** Berikan *Like*, hapus *Like*, dan berikan komentar pada postingan favoritmu dengan animasi yang *smooth*.
+* **👥 Connect:** Fitur *Follow* dan *Unfollow* antar pengguna.
+* **👤 Profile Management:** Kustomisasi detail profil dan lihat galeri foto pribadimu.
+* **💾 Offline Bookmark (Local Storage):** Simpan sesi *login* secara otomatis sehingga tidak perlu *login* berulang kali.
 
-*   **Framework**: [Flutter](https://flutter.dev/)
-*   **State Management**: `flutter_bloc`, `equatable`
-*   **Dependency Injection**: `get_it`
-*   **Networking**: `dio`
-*   **Local Storage**: `shared_preferences`, `hive`, `hive_flutter`
-*   **Data Handling**: `dartz` (for functional error handling), `json_serializable`
-*   **Backend Services**: Firebase Core, Auth, Storage, Cloud Firestore
-*   **Assets & UI**: `cached_network_image`, `lottie`, `flutter_launcher_icons`
+---
 
-## 📂 Folder Structure
+## 🛠️ Tech Stack & Tools
 
-```
+* **Framework:** [Flutter](https://flutter.dev/) (Dart)
+* **State Management:** `flutter_bloc`, `equatable`
+* **Architecture:** Clean Architecture (Domain, Data, Presentation Layer)
+* **Dependency Injection:** `get_it`
+* **Networking & API:** `dio` (dengan *Custom Interceptors*)
+* **Local Storage:** `shared_preferences`, `hive`
+* **Backend Services:** REST API Dibimbing (Utama) & Firebase (FCM/Crashlytics/Auth)
+* **UI/UX & Assets:** `cached_network_image`, `lottie` (untuk animasi kodok 🐸), `Google Fonts`.
+
+---
+
+## 🎨 Design & UI/UX
+
+Kippy menggunakan tema warna yang *fresh*, ceria, dan modern:
+* 🤍 **Background:** *Broken White* (`#F5F5F0`) dan *Card White* (`#FAFAF8`) agar konten foto/meme lebih menonjol.
+* 💚 **Accent/Primary:** *Lime Green* (`#8DEE10`), memberikan nuansa energik, ramah, dan khas "Kippy" si Kodok.
+* ✨ **Interactions:** Dilengkapi dengan transisi *swipe* yang mulus, *bottom-sheet UI* untuk komentar, dan *shimmer loading effect*.
+
+---
+
+## 📂 Struktur Proyek (Clean Architecture)
+
+Proyek ini dipisahkan berdasarkan fitur (*feature-driven*) dengan lapisan *Clean Architecture* di dalamnya:
+
+```text
 lib/
-├── config/             # App routing and global configuration
-├── core/               # Shared utilities, theme, networking clients, injection container
-│   ├── errors/         # Failures and Exceptions definitions
-│   ├── network/        # Base Dio client setups
-│   └── theme/          # App theme definitions
-├── features/           # App features isolated by domain
-│   ├── auth/           # Login, Register functionalities
-│   ├── explore/        # Search and discover UI and logic
-│   ├── home/           # Main feed and post functionalities
-│   ├── profile/        # User profile, settings, and edit functionalities
-│   └── social/         # Comments, likes, and activity notifications
+├── config/             # App routing dan tema global
+├── core/               # Shared utilities, error handling, network base (Dio)
+├── features/           # Modul fitur aplikasi
+│   ├── auth/           # Login & Register (Domain, Data, Presentation)
+│   ├── explore/        # Halaman Explore & pencarian
+│   ├── home/           # Feed utama dan Stories
+│   ├── profile/        # Manajemen profil pengguna
+│   └── social/         # Interaksi (Like, Comment, Follow)
 └── main.dart           # App entry point
 ```
 
-## ⚙️ Getting Started
+## ⚙️ Cara Menjalankan (Getting Started)
 
-### Prerequisites
-*   Flutter SDK (>=3.9.0)
-*   Dart SDK
-*   An active Firebase project with Authentication, Firestore, and Storage enabled.
+### Prasyarat (Prerequisites)
 
-### Installation
+* Flutter SDK (>=3.9.0)
+* Dart SDK
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/yourusername/kippy.git
-    cd kippy
-    ```
+### Instalasi (Installation)
 
-2.  **Install dependencies:**
-    ```bash
-    flutter pub get
-    ```
+1. **Clone repository ini:**
+```bash
+git clone git@github.com:RakhaAlpip/Kippy.git
 
-3.  **Generate files (if needed):**
-    For JSON serialization and other code generation:
-    ```bash
-    dart run build_runner build --delete-conflicting-outputs
-    ```
+```
 
-4.  **Run the app:**
-    ```bash
-    flutter run
-    ```
 
-## 🎨 Design
+2. **Masuk ke direktori project:**
+```bash
+cd Kippy
 
-The app uses a clean, light mode-only aesthetic centered around a "broken white" (`#F5F5F0`) and "card white" (`#FAFAF8`) palette with a vibrant Lime Green (`#8DEE10`) accent color, giving it a playful and modern feel appropriate for a meme/photo-sharing platform.
+```
 
-## 👨‍💻 Developer Notes
 
-*   Ensure to configure `firebase_options.dart` appropriately using the FlutterFire CLI before running the project.
-*   API keys and endpoints (like the bootcamp API) should be managed via environment variables or a secure configuration file in a production environment.
+3. **Install dependencies:**
+```bash
+flutter pub get
+
+```
+
+
+4. **Generate files (Jika diperlukan untuk Model/JSON):**
+```bash
+dart run build_runner build --delete-conflicting-outputs
+
+```
+
+
+5. **Jalankan aplikasi:**
+```bash
+flutter run
+
+```
+
+
+
+---
+
+## 📸 Screenshots
+
+| Login Screen | Home Feed | Explore Page | Profile |
+| --- | --- | --- | --- |
+| *<img src=assets/Screenshot/login.png>* | *<img src=assets/Screenshot/home.png>* | *<img src=assets/Screenshot/explore.png>* | *<img src=assets/Screenshot/profile.png>* |
+
+
+---
+
+## 📝 Credits
+
+Dibuat dengan ❤️ dan ☕ oleh **Rakha Alghifary** untuk Final Project Bootcamp Dibimbing.id.
+API Backend disediakan oleh Tim Dibimbing.
+
+*Keep Happy with Kippy!* 🐸✨
