@@ -1,6 +1,7 @@
 # 🐸 Kippy (Keep Happy) - Photo Sharing App
 
 [![Video Demo](https://img.shields.io/badge/YouTube-Watch_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/pJ1bkkJKyr8)
+
 [Presentasi Saya](./Kippy_Bootcamp_Presentation.pptx)
 
 **Kippy** adalah aplikasi *mobile photo sharing* yang ceria dan berbasis komunitas, bertujuan untuk menyebarkan kebahagiaan melalui foto dan foto lucu. Dibangun sebagai **Final Project Bootcamp Mobile Apps Dibimbing.id**, Kippy mengedepankan performa yang solid dengan antarmuka yang modern dan interaktif.
