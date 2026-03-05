@@ -29,7 +29,7 @@ class SocialRemoteDataSourceImpl implements SocialRemoteDataSource {
   @override
   Future<void> likePost(String postId) async {
     try {
-      await dioClient.dio.post(ApiEndpoints.likePost(postId));
+      await dioClient.dio.post(ApiEndpoints.like, data: {'postId': postId});
     } on DioException catch (e) {
       throw ServerException(
         message: e.response?.data?['message'] ?? 'Failed to like post',
@@ -41,7 +41,7 @@ class SocialRemoteDataSourceImpl implements SocialRemoteDataSource {
   @override
   Future<void> unlikePost(String postId) async {
     try {
-      await dioClient.dio.post(ApiEndpoints.unlikePost(postId));
+      await dioClient.dio.post(ApiEndpoints.unlike, data: {'postId': postId});
     } on DioException catch (e) {
       throw ServerException(
         message: e.response?.data?['message'] ?? 'Failed to unlike post',
@@ -53,8 +53,9 @@ class SocialRemoteDataSourceImpl implements SocialRemoteDataSource {
   @override
   Future<List<CommentModel>> getComments(String postId) async {
     try {
-      final response = await dioClient.dio.get(ApiEndpoints.comments(postId));
-      final List<dynamic> data = response.data['data'] ?? [];
+      // NOTE: Postman missing get-comments endpoint, we attempt getting post details
+      final response = await dioClient.dio.get(ApiEndpoints.postById(postId));
+      final List<dynamic> data = response.data['data']?['comments'] ?? [];
       return data.map((json) => CommentModel.fromJson(json)).toList();
     } on DioException catch (e) {
       throw ServerException(
@@ -71,8 +72,8 @@ class SocialRemoteDataSourceImpl implements SocialRemoteDataSource {
   }) async {
     try {
       final response = await dioClient.dio.post(
-        ApiEndpoints.comments(postId),
-        data: {'content': content},
+        ApiEndpoints.createComment,
+        data: {'postId': postId, 'comment': content},
       );
       return CommentModel.fromJson(response.data['data']);
     } on DioException catch (e) {
@@ -89,7 +90,7 @@ class SocialRemoteDataSourceImpl implements SocialRemoteDataSource {
     required String commentId,
   }) async {
     try {
-      await dioClient.dio.delete(ApiEndpoints.deleteComment(postId, commentId));
+      await dioClient.dio.delete(ApiEndpoints.deleteComment(commentId));
     } on DioException catch (e) {
       throw ServerException(
         message: e.response?.data?['message'] ?? 'Failed to delete comment',
@@ -101,7 +102,10 @@ class SocialRemoteDataSourceImpl implements SocialRemoteDataSource {
   @override
   Future<void> followUser(String userId) async {
     try {
-      await dioClient.dio.post(ApiEndpoints.followUser(userId));
+      await dioClient.dio.post(
+        ApiEndpoints.follow,
+        data: {'userIdFollow': userId},
+      );
     } on DioException catch (e) {
       throw ServerException(
         message: e.response?.data?['message'] ?? 'Failed to follow user',
@@ -113,7 +117,7 @@ class SocialRemoteDataSourceImpl implements SocialRemoteDataSource {
   @override
   Future<void> unfollowUser(String userId) async {
     try {
-      await dioClient.dio.post(ApiEndpoints.unfollowUser(userId));
+      await dioClient.dio.delete(ApiEndpoints.unfollow(userId));
     } on DioException catch (e) {
       throw ServerException(
         message: e.response?.data?['message'] ?? 'Failed to unfollow user',

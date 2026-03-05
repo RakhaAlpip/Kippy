@@ -21,6 +21,7 @@ class AppRoutes {
   static const String explore = '/explore';
   static const String create = '/create';
   static const String profile = '/profile';
+  static const String settings = '/settings';
   static const String editProfile = '/edit-profile';
   static const String bookmarks = '/bookmarks';
 }
@@ -48,7 +49,7 @@ class AppRouter {
       case AppRoutes.profile:
         final userId = settings.arguments as String?;
         return MaterialPageRoute(builder: (_) => ProfilePage(userId: userId));
-      case '/settings':
+      case AppRoutes.settings:
         return MaterialPageRoute(builder: (_) => const SettingsPage());
       case AppRoutes.editProfile:
         return MaterialPageRoute(builder: (_) => const EditProfilePage());

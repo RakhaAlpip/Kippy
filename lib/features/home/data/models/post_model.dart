@@ -19,16 +19,21 @@ class PostModel extends Post {
   factory PostModel.fromJson(Map<String, dynamic> json) {
     return PostModel(
       id: json['id']?.toString() ?? '',
-      userId: json['user_id']?.toString() ?? '',
-      username: json['username'] ?? '',
-      userAvatarUrl: json['user_avatar_url'],
-      imageUrl: json['image_url'] ?? '',
+      userId: (json['userId'] ?? json['user_id'])?.toString() ?? '',
+      username: json['username'] ?? json['user']?['username'] ?? '',
+      userAvatarUrl:
+          json['userAvatarUrl'] ??
+          json['user_avatar_url'] ??
+          json['user']?['profilePictureUrl'],
+      imageUrl: json['imageUrl'] ?? json['image_url'] ?? '',
       caption: json['caption'],
-      likesCount: json['likes_count'] ?? 0,
-      commentsCount: json['comments_count'] ?? 0,
-      isLiked: json['is_liked'] ?? false,
+      likesCount: json['totalLikes'] ?? json['likes_count'] ?? 0,
+      commentsCount: json['totalComments'] ?? json['comments_count'] ?? 0,
+      isLiked: json['isLike'] ?? json['is_liked'] ?? false,
       isBookmarked: false,
-      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] ?? json['created_at'] ?? '') ??
+          DateTime.now(),
     );
   }
 

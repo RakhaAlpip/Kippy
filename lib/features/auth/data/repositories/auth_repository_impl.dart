@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
+import '../models/user_model.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
@@ -22,14 +23,30 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      final user = await remoteDataSource.login(
+      final response = await remoteDataSource.login(
         email: email,
         password: password,
       );
-      // TODO: cache token from response
+
+      final user = response['user'] as UserModel;
+      final token = response['token'] as String?;
+
+      if (token == null || token.isEmpty) {
+        return const Left(
+          ServerFailure(
+            message: 'Login failed: No authentication token received.',
+          ),
+        );
+      }
+
+      await localDataSource.cacheToken(token);
+      await localDataSource.cacheUser(user);
+
       return Right(user);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Login failed: $e'));
     }
   }
 
@@ -40,14 +57,31 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      final user = await remoteDataSource.register(
+      final response = await remoteDataSource.register(
         username: username,
         email: email,
         password: password,
       );
+
+      final user = response['user'] as UserModel;
+      final token = response['token'] as String?;
+
+      if (token == null || token.isEmpty) {
+        return const Left(
+          ServerFailure(
+            message: 'Registration failed: No authentication token received.',
+          ),
+        );
+      }
+
+      await localDataSource.cacheToken(token);
+      await localDataSource.cacheUser(user);
+
       return Right(user);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Registration failed: $e'));
     }
   }
 
@@ -56,6 +90,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await remoteDataSource.logout();
       await localDataSource.clearToken();
+      await localDataSource.clearUser();
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
@@ -65,5 +100,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<bool> isAuthenticated() async {
     return localDataSource.hasToken();
+  }
+
+  @override
+  Future<User?> getAuthenticatedUser() async {
+    return localDataSource.getCachedUser();
   }
 }

@@ -19,15 +19,27 @@ class UserModel extends User {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id']?.toString() ?? '',
-      username: json['username'] ?? '',
-      email: json['email'] ?? '',
-      fullName: json['full_name'],
-      bio: json['bio'],
-      avatarUrl: json['avatar_url'],
-      followersCount: json['followers_count'] ?? 0,
-      followingCount: json['following_count'] ?? 0,
-      postsCount: json['posts_count'] ?? 0,
-      isFollowed: json['is_followed'] ?? false,
+      username: json['username']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      fullName: (json['name'] ?? json['full_name'])?.toString(),
+      bio: json['bio']?.toString(),
+      avatarUrl: (json['profilePictureUrl'] ?? json['avatar_url'])?.toString(),
+      followersCount:
+          int.tryParse(
+            (json['totalFollowers'] ?? json['followers_count'] ?? 0).toString(),
+          ) ??
+          0,
+      followingCount:
+          int.tryParse(
+            (json['totalFollowing'] ?? json['following_count'] ?? 0).toString(),
+          ) ??
+          0,
+      postsCount:
+          int.tryParse(
+            (json['totalPosts'] ?? json['posts_count'] ?? 0).toString(),
+          ) ??
+          0,
+      isFollowed: json['is_followed'] == true,
     );
   }
 
@@ -37,9 +49,9 @@ class UserModel extends User {
       'id': id,
       'username': username,
       'email': email,
-      'full_name': fullName,
+      'name': fullName,
       'bio': bio,
-      'avatar_url': avatarUrl,
+      'profilePictureUrl': avatarUrl,
       'followers_count': followersCount,
       'following_count': followingCount,
       'posts_count': postsCount,

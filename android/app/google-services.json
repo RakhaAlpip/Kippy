@@ -12,7 +12,12 @@
           "package_name": "com.example.kippy"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "60254233745-9t1om3nro39rkj17887d1j8hioddnopk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBfRTMkz88_UIpl0xMGse_CQPiXYiC8kik"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "60254233745-9t1om3nro39rkj17887d1j8hioddnopk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "60254233745-inhtftul906l39h8n0d6s1bv4qgll5fl.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.kippy"
+              }
+            }
+          ]
         }
       }
     }

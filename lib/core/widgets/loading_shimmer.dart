@@ -56,9 +56,9 @@ class _LoadingShimmerState extends State<LoadingShimmer>
               begin: Alignment(_animation.value, 0),
               end: Alignment(_animation.value + 2, 0),
               colors: [
-                Colors.grey.shade800,
-                Colors.grey.shade700,
-                Colors.grey.shade800,
+                const Color(0xFFE8E8E3),
+                const Color(0xFFF0F0EB),
+                const Color(0xFFE8E8E3),
               ],
             ),
           ),

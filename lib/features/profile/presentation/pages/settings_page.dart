@@ -1,315 +1,329 @@
 import 'package:flutter/material.dart';
-import '../../../auth/presentation/pages/get_started_page.dart'; // Primary Color
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../config/app_router.dart';
+import '../../../../core/widgets/animated_list_item.dart';
+
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
-        leading: const BackButton(),
-        title: const Text('Settings'),
-        centerTitle: true,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        title: const Text(
+          'Settings',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            // Profile Header
-            Center(
-              child: Column(
-                children: [
-                  Stack(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: GetStartedConstants.primaryColor,
-                            width: 2,
-                          ),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 40,
-                          backgroundImage: NetworkImage(
-                            'https://i.pravatar.cc/150?img=12',
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: GetStartedConstants.primaryColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.edit,
-                            size: 16,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Kippy User',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '@kippy_fan_123',
-                    style: TextStyle(color: GetStartedConstants.primaryColor),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
+      body: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is AuthUnauthenticated) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.getStarted,
+              (_) => false,
+            );
+          } else if (state is AuthError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red.shade400,
+              ),
+            );
+          }
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Profile Header
+              AnimatedListItem(
+                index: 0,
+                child: GestureDetector(
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.editProfile),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: GetStartedConstants.primaryColor.withAlpha(30),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: GetStartedConstants.primaryColor.withAlpha(100),
-                      ),
-                    ),
-                    child: const Text(
-                      'Pro Member',
-                      style: TextStyle(
-                        color: GetStartedConstants.primaryColor,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Settings Sections
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SectionTitle('ACCOUNT', theme),
-                  _SettingsCard(
-                    theme: theme,
-                    children: [
-                      _SettingsTile(
-                        icon: Icons.person,
-                        title: 'Edit Profile',
-                        theme: theme,
-                        onTap: () {
-                          Navigator.pushNamed(context, '/edit-profile');
-                        },
-                      ),
-                      _SettingsTile(
-                        icon: Icons.lock_outline,
-                        title: 'Password & Security',
-                        theme: theme,
-                      ),
-                      _SettingsTile(
-                        icon: Icons.privacy_tip_outlined,
-                        title: 'Privacy',
-                        showDivider: false,
-                        theme: theme,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  _SectionTitle('PREFERENCES', theme),
-                  _SettingsCard(
-                    theme: theme,
-                    children: [
-                      _SettingsTile(
-                        icon: Icons.notifications_none,
-                        title: 'Notifications',
-                        trailing: Switch(
-                          value: true,
-                          activeTrackColor: GetStartedConstants.primaryColor,
-                          onChanged: (v) {},
+                      color: const Color(0xFFFAFAF8),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                        theme: theme,
-                      ),
-                      _SettingsTile(
-                        icon: Icons.language,
-                        title: 'Language',
-                        showDivider: false,
-                        theme: theme,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  _SectionTitle('SUPPORT', theme),
-                  _SettingsCard(
-                    theme: theme,
-                    children: [
-                      _SettingsTile(
-                        icon: Icons.help_outline,
-                        title: 'Help Center',
-                        theme: theme,
-                      ),
-                      _SettingsTile(
-                        icon: Icons.bug_report_outlined,
-                        title: 'Report a Bug',
-                        showDivider: false,
-                        theme: theme,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Logout Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/',
-                          (route) => false,
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.withAlpha(20),
-                        foregroundColor: Colors.red,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 28,
+                          backgroundColor: Color(0xFFE8E8E3),
+                          child: Icon(
+                            Icons.person,
+                            size: 28,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        'Log Out',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Your Profile',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                'Edit your profile and preferences',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right, color: Colors.grey.shade400),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Center(
-                    child: Text(
-                      'Kippy v1.0.0',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+              const SizedBox(height: 28),
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  final ThemeData theme;
-  const _SectionTitle(this.title, this.theme);
+              // Account Section
+              AnimatedListItem(
+                index: 1,
+                child: _buildSection(
+                  title: 'ACCOUNT',
+                  items: [
+                    _SettingItem(Icons.person_outline, 'Edit Profile', () {
+                      Navigator.pushNamed(context, AppRoutes.editProfile);
+                    }),
+                    _SettingItem(Icons.lock_outline, 'Change Password', () {}),
+                    _SettingItem(Icons.shield_outlined, 'Privacy', () {}),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0, left: 4),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: Colors.grey.shade500,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
-  }
-}
+              // Preferences Section
+              AnimatedListItem(
+                index: 2,
+                child: _buildSection(
+                  title: 'PREFERENCES',
+                  items: [
+                    _SettingItem(
+                      Icons.notifications_outlined,
+                      'Notifications',
+                      () {},
+                    ),
+                    _SettingItem(Icons.language, 'Language', () {}),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
 
-class _SettingsCard extends StatelessWidget {
-  final List<Widget> children;
-  final ThemeData theme;
-  const _SettingsCard({required this.children, required this.theme});
+              // Support Section
+              AnimatedListItem(
+                index: 3,
+                child: _buildSection(
+                  title: 'SUPPORT',
+                  items: [
+                    _SettingItem(Icons.help_outline, 'Help Center', () {}),
+                    _SettingItem(
+                      Icons.bug_report_outlined,
+                      'Report a Bug',
+                      () {},
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 28),
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+              // Logout Button
+              AnimatedListItem(
+                index: 4,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      final isLoading = state is AuthLoading;
+                      return ElevatedButton.icon(
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    title: const Text('Log Out?'),
+                                    content: const Text(
+                                      'Are you sure you want to log out?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          context.read<AuthBloc>().add(
+                                            AuthLogoutRequested(),
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red.shade50,
+                                          foregroundColor: Colors.red,
+                                          elevation: 0,
+                                        ),
+                                        child: const Text('Log Out'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                        icon: isLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                            : const Icon(Icons.logout),
+                        label: Text(isLoading ? 'Logging out...' : 'Log Out'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade50,
+                          foregroundColor: Colors.red,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // App version
+              Center(
+                child: Text(
+                  'Kippy v1.0.0 🐸',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
-        ],
+        ),
       ),
-      child: Column(children: children),
     );
   }
-}
 
-class _SettingsTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final Widget? trailing;
-  final bool showDivider;
-  final ThemeData theme;
-  final VoidCallback? onTap;
-
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    this.trailing,
-    this.showDivider = true,
-    required this.theme,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSection({
+    required String title,
+    required List<_SettingItem> items,
+  }) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: GetStartedConstants.primaryColor.withAlpha(20),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: GetStartedConstants.primaryColor,
-              size: 20,
-            ),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade500,
+            letterSpacing: 1.2,
           ),
-          title: Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-          trailing:
-              trailing ?? const Icon(Icons.chevron_right, color: Colors.grey),
-          onTap: onTap,
         ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            indent: 64,
-            color: theme.dividerColor.withAlpha(50),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFFAFAF8),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
+          child: Column(
+            children: items.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              return Column(
+                children: [
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8DEE10).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        item.icon,
+                        color: const Color(0xFF8DEE10),
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      item.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey.shade400,
+                    ),
+                    onTap: item.onTap,
+                  ),
+                  if (index < items.length - 1)
+                    Divider(height: 1, indent: 60, color: Colors.grey.shade200),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
       ],
     );
   }
+}
+
+class _SettingItem {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  _SettingItem(this.icon, this.title, this.onTap);
 }

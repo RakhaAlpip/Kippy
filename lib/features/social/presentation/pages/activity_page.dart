@@ -1,59 +1,93 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/animated_list_item.dart';
+import '../../../auth/presentation/pages/get_started_page.dart';
+
 class ActivityPage extends StatelessWidget {
   const ActivityPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const Text(
           'Activity',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      body: ListView.separated(
-        itemCount: 20,
-        separatorBuilder: (context, index) =>
-            Divider(color: Colors.grey.shade200, height: 1),
-        itemBuilder: (context, index) {
-          final isFollow = index % 3 == 0;
-          final time = '${index + 1}h ago';
+      body: _buildActivityList(),
+    );
+  }
 
-          return ListTile(
+  Widget _buildActivityList() {
+    // Mock activity data — in production, this would come from a BLoC
+    final activities = [
+      _Activity('user_1', 'started following you', ActivityType.follow, '2m'),
+      _Activity('user_2', 'liked your post', ActivityType.like, '15m'),
+      _Activity('user_3', 'commented on your post', ActivityType.comment, '1h'),
+      _Activity('user_4', 'started following you', ActivityType.follow, '2h'),
+      _Activity('user_5', 'liked your post', ActivityType.like, '5h'),
+      _Activity(
+        'user_6',
+        'mentioned you in a comment',
+        ActivityType.comment,
+        '1d',
+      ),
+      _Activity('user_7', 'started following you', ActivityType.follow, '2d'),
+      _Activity('user_8', 'liked your post', ActivityType.like, '3d'),
+    ];
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: activities.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 4),
+      itemBuilder: (context, index) {
+        final activity = activities[index];
+        return AnimatedListItem(
+          index: index,
+          slideOffset: const Offset(0.15, 0.0), // Slide from right
+          child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
+              horizontal: 8,
+              vertical: 4,
             ),
             leading: Stack(
               children: [
                 CircleAvatar(
                   radius: 24,
+                  backgroundColor: const Color(0xFFE8E8E3),
                   backgroundImage: NetworkImage(
-                    'https://i.pravatar.cc/150?img=${index + 40}',
+                    'https://i.pravatar.cc/150?img=${index + 20}',
                   ),
                 ),
                 Positioned(
                   bottom: 0,
                   right: 0,
                   child: Container(
+                    width: 16,
+                    height: 16,
                     decoration: BoxDecoration(
-                      color: isFollow ? Colors.blue : Colors.red,
+                      color: activity.type == ActivityType.follow
+                          ? GetStartedConstants.primaryColor
+                          : activity.type == ActivityType.like
+                          ? Colors.red
+                          : Colors.blue,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: theme.scaffoldBackgroundColor,
-                        width: 2,
-                      ),
+                      border: Border.all(color: Colors.white, width: 2),
                     ),
-                    padding: const EdgeInsets.all(4),
                     child: Icon(
-                      isFollow ? Icons.person_add : Icons.favorite,
-                      size: 10,
+                      activity.type == ActivityType.follow
+                          ? Icons.person_add
+                          : activity.type == ActivityType.like
+                          ? Icons.favorite
+                          : Icons.chat_bubble,
+                      size: 8,
                       color: Colors.white,
                     ),
                   ),
@@ -62,54 +96,64 @@ class ActivityPage extends StatelessWidget {
             ),
             title: RichText(
               text: TextSpan(
-                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                style: const TextStyle(color: Colors.black87, fontSize: 14),
                 children: [
                   TextSpan(
-                    text: 'user_${index + 40} ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    text: activity.username,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  TextSpan(
-                    text: isFollow
-                        ? 'started following you.'
-                        : 'liked your photo.',
-                  ),
+                  TextSpan(text: ' ${activity.action}'),
                 ],
               ),
             ),
             subtitle: Text(
-              time,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              activity.timeAgo,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
-            trailing: isFollow
-                ? ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.textTheme.bodyLarge?.color,
-                      foregroundColor: theme.scaffoldBackgroundColor,
-                      minimumSize: const Size(80, 32),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+            trailing: activity.type == ActivityType.follow
+                ? SizedBox(
+                    width: 80,
+                    height: 32,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GetStartedConstants.primaryColor,
+                        foregroundColor: Colors.black,
+                        elevation: 0,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Follow',
+                        style: TextStyle(fontSize: 12),
                       ),
                     ),
-                    child: const Text('Follow'),
                   )
-                : Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      image: DecorationImage(
-                        image: NetworkImage(
-                          'https://picsum.photos/seed/${index + 10}/200/200',
-                        ),
-                        fit: BoxFit.cover,
-                      ),
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.network(
+                      'https://picsum.photos/100/100?random=${index + 50}',
+                      width: 44,
+                      height: 44,
+                      fit: BoxFit.cover,
                     ),
                   ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
+}
+
+enum ActivityType { follow, like, comment }
+
+class _Activity {
+  final String username;
+  final String action;
+  final ActivityType type;
+  final String timeAgo;
+
+  _Activity(this.username, this.action, this.type, this.timeAgo);
 }

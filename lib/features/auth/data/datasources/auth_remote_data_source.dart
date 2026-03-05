@@ -6,8 +6,11 @@ import '../models/user_model.dart';
 
 /// Remote data source for authentication API calls.
 abstract class AuthRemoteDataSource {
-  Future<UserModel> login({required String email, required String password});
-  Future<UserModel> register({
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  });
+  Future<Map<String, dynamic>> register({
     required String username,
     required String email,
     required String password,
@@ -21,7 +24,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   AuthRemoteDataSourceImpl(this.dioClient);
 
   @override
-  Future<UserModel> login({
+  Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
@@ -30,18 +33,36 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         ApiEndpoints.login,
         data: {'email': email, 'password': password},
       );
-      // TODO: Extract token from response and return it along with user
-      return UserModel.fromJson(response.data['data']);
+
+      final data = response.data['user'] ?? response.data['data'];
+      if (data == null) {
+        throw const ServerException(
+          message: 'Invalid response: missing user data',
+        );
+      }
+
+      return {
+        'user': UserModel.fromJson(data),
+        'token': response.data['token'] ?? data['token'],
+      };
     } on DioException catch (e) {
+      String errorMessage = 'Login failed';
+      if (e.response?.data is Map) {
+        errorMessage = e.response?.data['message'] ?? errorMessage;
+      } else if (e.response?.data is String) {
+        errorMessage = e.response?.data;
+      }
       throw ServerException(
-        message: e.response?.data?['message'] ?? 'Login failed',
+        message: errorMessage,
         statusCode: e.response?.statusCode,
       );
+    } catch (e) {
+      throw ServerException(message: 'Unexpected error during login: $e');
     }
   }
 
   @override
-  Future<UserModel> register({
+  Future<Map<String, dynamic>> register({
     required String username,
     required String email,
     required String password,
@@ -49,13 +70,44 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await dioClient.dio.post(
         ApiEndpoints.register,
-        data: {'username': username, 'email': email, 'password': password},
+        data: {
+          'name': username,
+          'username': username,
+          'email': email,
+          'password': password,
+          'passwordRepeat': password,
+          'profilePictureUrl': '',
+          'phoneNumber': '',
+          'bio': '',
+          'website': '',
+        },
       );
-      return UserModel.fromJson(response.data['data']);
+
+      final data = response.data['user'] ?? response.data['data'];
+      if (data == null) {
+        throw const ServerException(
+          message: 'Invalid response: registration failed',
+        );
+      }
+
+      return {
+        'user': UserModel.fromJson(data),
+        'token': response.data['token'] ?? data['token'],
+      };
     } on DioException catch (e) {
+      String errorMessage = 'Registration failed';
+      if (e.response?.data is Map) {
+        errorMessage = e.response?.data['message'] ?? errorMessage;
+      } else if (e.response?.data is String) {
+        errorMessage = e.response?.data;
+      }
       throw ServerException(
-        message: e.response?.data?['message'] ?? 'Registration failed',
+        message: errorMessage,
         statusCode: e.response?.statusCode,
+      );
+    } catch (e) {
+      throw ServerException(
+        message: 'Unexpected error during registration: $e',
       );
     }
   }
@@ -63,7 +115,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout() async {
     try {
-      await dioClient.dio.post(ApiEndpoints.logout);
+      await dioClient.dio.get(ApiEndpoints.logout);
     } on DioException catch (e) {
       throw ServerException(
         message: e.response?.data?['message'] ?? 'Logout failed',

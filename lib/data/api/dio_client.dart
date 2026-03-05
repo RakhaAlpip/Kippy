@@ -11,13 +11,13 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConstants.baseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           // Automatically injecting the API key from Constants
-          'x-api-key': AppConstants.apiKey,
+          'apiKey': AppConstants.apiKey,
         },
       ),
     );

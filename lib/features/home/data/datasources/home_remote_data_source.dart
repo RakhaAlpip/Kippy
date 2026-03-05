@@ -20,11 +20,17 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   Future<List<PostModel>> getFeedPosts({int page = 1}) async {
     try {
       final response = await dioClient.dio.get(
-        ApiEndpoints.feedPosts,
-        queryParameters: {'page': page, 'limit': AppConstants.defaultPageSize},
+        ApiEndpoints.followingPost,
+        queryParameters: {'page': page, 'size': AppConstants.defaultPageSize},
       );
-      final List<dynamic> data = response.data['data'] ?? [];
-      return data.map((json) => PostModel.fromJson(json)).toList();
+      final dynamic rawData = response.data['data'];
+      final List<dynamic> data = rawData is List
+          ? rawData
+          : (rawData is Map ? (rawData['posts'] ?? rawData['data'] ?? []) : []);
+      return data
+          .map((json) => PostModel.fromJson(json))
+          .where((post) => post.imageUrl.isNotEmpty)
+          .toList();
     } on DioException catch (e) {
       throw ServerException(
         message: e.response?.data?['message'] ?? 'Failed to fetch feed',
@@ -36,8 +42,16 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   @override
   Future<List<StoryModel>> getStories() async {
     try {
-      final response = await dioClient.dio.get(ApiEndpoints.stories);
-      final List<dynamic> data = response.data['data'] ?? [];
+      final response = await dioClient.dio.get(
+        ApiEndpoints.followingStory,
+        queryParameters: {'page': 1, 'size': AppConstants.defaultPageSize},
+      );
+      final dynamic rawData = response.data['data'];
+      final List<dynamic> data = rawData is List
+          ? rawData
+          : (rawData is Map
+                ? (rawData['stories'] ?? rawData['data'] ?? [])
+                : []);
       return data.map((json) => StoryModel.fromJson(json)).toList();
     } on DioException catch (e) {
       throw ServerException(

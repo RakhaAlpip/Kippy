@@ -23,6 +23,7 @@ Sesuai dengan spesifikasi *Photo Sharing API* & objektif tugas:
 * **🔍 Explore & Search:** Halaman *grid view* untuk menemukan konten baru dan inspirasi.
 * **📸 Post & Story Creation:** Bagikan momen atau meme lucu dengan *caption* menarik.
 * **❤️ Social Interactions:** Berikan *Like*, hapus *Like*, dan berikan komentar pada postingan favoritmu dengan animasi yang *smooth*.
+* **👻 Robust Data Handling:** Custom "Ghost" placeholders untuk link gambar yang rusak/mati (404 resilience), memastikan tampilan aplikasi tetap premium.
 * **👥 Connect:** Fitur *Follow* dan *Unfollow* antar pengguna.
 * **👤 Profile Management:** Kustomisasi detail profil dan lihat galeri foto pribadimu.
 * **💾 Offline Bookmark (Local Storage):** Simpan sesi *login* secara otomatis sehingga tidak perlu *login* berulang kali.
@@ -80,38 +81,23 @@ lib/
 1. **Clone repository ini:**
 ```bash
 git clone git@github.com:RakhaAlpip/Kippy.git
-
-```
-
-
-2. **Masuk ke direktori project:**
-```bash
 cd Kippy
-
 ```
 
-
-3. **Install dependencies:**
+2. **Install dependencies:**
 ```bash
 flutter pub get
-
 ```
 
-
-4. **Generate files (Jika diperlukan untuk Model/JSON):**
+3. **Generate files (Jika diperlukan untuk Model/JSON):**
 ```bash
 dart run build_runner build --delete-conflicting-outputs
-
 ```
 
-
-5. **Jalankan aplikasi:**
+4. **Jalankan aplikasi:**
 ```bash
 flutter run
-
 ```
-
-
 
 ---
 
@@ -130,3 +116,4 @@ Dibuat dengan ❤️ dan ☕ oleh **Rakha Alghifary** untuk Final Project Bootca
 API Backend disediakan oleh Tim Dibimbing.
 
 *Keep Happy with Kippy!* 🐸✨
+

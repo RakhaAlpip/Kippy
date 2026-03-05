@@ -22,4 +22,7 @@ abstract class AuthRepository {
 
   /// Check if user is currently authenticated (has valid token).
   Future<bool> isAuthenticated();
+
+  /// Get the currently authenticated user from local storage.
+  Future<User?> getAuthenticatedUser();
 }

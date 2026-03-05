@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../config/app_router.dart';
 import '../../../explore/presentation/pages/explore_page.dart';
 import '../../../social/presentation/pages/activity_page.dart';
 import 'home_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/pages/get_started_page.dart'; // Primary Color
 import 'package:flutter/cupertino.dart'; // For a few icons
 
@@ -30,15 +32,7 @@ class _MainWrapperPageState extends State<MainWrapperPage> {
     super.dispose();
   }
 
-  // List of pages to keep alive in PageView
-  final List<Widget> _pages = [
-    const HomePage(),
-    const ExplorePage(),
-    const ActivityPage(),
-    const ProfilePage(
-      userId: 'kippy_fan_123',
-    ), // Mock passing user id to distinguish from general 'Settings' usage
-  ];
+  // Pages are now built dynamically in build() to use the latest AuthState
 
   void _onNavigationTapped(int index) {
     if (index == 2) {
@@ -77,55 +71,72 @@ class _MainWrapperPageState extends State<MainWrapperPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        children: _pages,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _getBottomNavIndex(),
-        onTap: _onNavigationTapped,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: theme.scaffoldBackgroundColor,
-        selectedItemColor: GetStartedConstants.primaryColor,
-        unselectedItemColor:
-            theme.iconTheme.color?.withAlpha(128) ?? Colors.grey,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        elevation: 10,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_filled),
-            label: 'Home',
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        String? userId;
+        if (state is AuthAuthenticated) {
+          userId = state.user.id;
+        }
+
+        // Update pages list with the actual userId
+        final List<Widget> pages = [
+          const HomePage(),
+          const ExplorePage(),
+          const ActivityPage(),
+          ProfilePage(userId: userId),
+        ];
+
+        return Scaffold(
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            children: pages,
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.search),
-            label: 'Explore',
-          ),
-          BottomNavigationBarItem(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: GetStartedConstants.primaryColor,
-                shape: BoxShape.circle,
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _getBottomNavIndex(),
+            onTap: _onNavigationTapped,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: theme.scaffoldBackgroundColor,
+            selectedItemColor: GetStartedConstants.primaryColor,
+            unselectedItemColor:
+                theme.iconTheme.color?.withAlpha(128) ?? Colors.grey,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            elevation: 10,
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.home_filled),
+                label: 'Home',
               ),
-              child: const Icon(Icons.add, color: Colors.white, size: 28),
-            ),
-            label: 'Create',
+              const BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.search),
+                label: 'Explore',
+              ),
+              BottomNavigationBarItem(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: GetStartedConstants.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 28),
+                ),
+                label: 'Create',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.heart),
+                activeIcon: Icon(CupertinoIcons.heart_solid),
+                label: 'Activity',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.person),
+                activeIcon: Icon(CupertinoIcons.person_solid),
+                label: 'Profile',
+              ),
+            ],
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.heart),
-            activeIcon: Icon(CupertinoIcons.heart_solid),
-            label: 'Activity',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.person),
-            activeIcon: Icon(CupertinoIcons.person_solid),
-            label: 'Profile',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

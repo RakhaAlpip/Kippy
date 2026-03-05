@@ -33,10 +33,7 @@ class DefaultFirebaseOptions {
           'you can reconfigure this by running the FlutterFire CLI again.',
         );
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -63,6 +60,18 @@ class DefaultFirebaseOptions {
     messagingSenderId: '60254233745',
     projectId: 'kippy-c3228',
     storageBucket: 'kippy-c3228.firebasestorage.app',
+    iosClientId: '60254233745-inhtftul906l39h8n0d6s1bv4qgll5fl.apps.googleusercontent.com',
     iosBundleId: 'com.example.kippy',
   );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyCO_XLlaUow2sWbwiPkz0mcPptWtyvKUCI',
+    appId: '1:60254233745:web:4d6feb33a97014d4c54b30',
+    messagingSenderId: '60254233745',
+    projectId: 'kippy-c3228',
+    authDomain: 'kippy-c3228.firebaseapp.com',
+    storageBucket: 'kippy-c3228.firebasestorage.app',
+    measurementId: 'G-D8P8X0T3YL',
+  );
+
 }

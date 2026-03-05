@@ -19,10 +19,16 @@ class ExploreRemoteDataSourceImpl implements ExploreRemoteDataSource {
     try {
       final response = await dioClient.dio.get(
         ApiEndpoints.explorePosts,
-        queryParameters: {'page': page, 'limit': AppConstants.defaultPageSize},
+        queryParameters: {'page': page, 'size': AppConstants.defaultPageSize},
       );
-      final List<dynamic> data = response.data['data'] ?? [];
-      return data.map((json) => PostModel.fromJson(json)).toList();
+      final dynamic rawData = response.data['data'];
+      final List<dynamic> data = rawData is List
+          ? rawData
+          : (rawData is Map ? (rawData['posts'] ?? rawData['data'] ?? []) : []);
+      return data
+          .map((json) => PostModel.fromJson(json))
+          .where((post) => post.imageUrl.isNotEmpty)
+          .toList();
     } on DioException catch (e) {
       throw ServerException(
         message:

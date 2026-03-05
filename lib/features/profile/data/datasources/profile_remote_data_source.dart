@@ -44,20 +44,33 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
     File? avatar,
   }) async {
     try {
-      final Map<String, dynamic> formDataMap = {};
-      if (fullName != null) formDataMap['full_name'] = fullName;
-      if (bio != null) formDataMap['bio'] = bio;
+      String? avatarUrl;
+      // 1. Upload new avatar if provided
       if (avatar != null) {
         final fileName = avatar.path.split('/').last;
-        formDataMap['avatar'] = await MultipartFile.fromFile(
-          avatar.path,
-          filename: fileName,
+        final uploadFormData = FormData.fromMap({
+          'image': await MultipartFile.fromFile(
+            avatar.path,
+            filename: fileName,
+          ),
+        });
+        final uploadRes = await dioClient.dio.post(
+          ApiEndpoints.uploadImage,
+          data: uploadFormData,
         );
+        avatarUrl =
+            uploadRes.data['data']['url'] ?? uploadRes.data['data']['imageUrl'];
       }
-      final formData = FormData.fromMap(formDataMap);
-      final response = await dioClient.dio.put(
+
+      // 2. Update profile
+      final Map<String, dynamic> data = {};
+      if (fullName != null) data['name'] = fullName;
+      if (bio != null) data['bio'] = bio;
+      if (avatarUrl != null) data['profilePictureUrl'] = avatarUrl;
+
+      final response = await dioClient.dio.post(
         ApiEndpoints.updateProfile,
-        data: formData,
+        data: data,
       );
       return UserModel.fromJson(response.data['data']);
     } on DioException catch (e) {
@@ -71,9 +84,18 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   @override
   Future<List<PostModel>> getUserPosts(String userId) async {
     try {
-      final response = await dioClient.dio.get(ApiEndpoints.userPosts(userId));
-      final List<dynamic> data = response.data['data'] ?? [];
-      return data.map((json) => PostModel.fromJson(json)).toList();
+      final response = await dioClient.dio.get(
+        ApiEndpoints.userPosts(userId),
+        queryParameters: {'page': 1, 'size': AppConstants.defaultPageSize},
+      );
+      final dynamic rawData = response.data['data'];
+      final List<dynamic> data = rawData is List
+          ? rawData
+          : (rawData is Map ? (rawData['posts'] ?? rawData['data'] ?? []) : []);
+      return data
+          .map((json) => PostModel.fromJson(json))
+          .where((post) => post.imageUrl.isNotEmpty)
+          .toList();
     } on DioException catch (e) {
       throw ServerException(
         message: e.response?.data?['message'] ?? 'Failed to fetch user posts',

@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/fullscreen_image_viewer.dart';
-import '../../../../core/utils/mock_data.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+import '../../../../core/injection_container.dart' as di;
+import '../../../../core/widgets/error_state_widget.dart';
+import '../../../../core/widgets/shimmer_loading_list.dart';
+import '../../../../core/widgets/animated_list_item.dart';
+import '../../domain/entities/post.dart';
+import '../../domain/entities/story.dart';
+import '../bloc/home_bloc.dart';
+import '../../../social/presentation/bloc/social_bloc.dart';
 import '../../../social/presentation/widgets/comment_bottom_sheet.dart';
-import '../../../auth/presentation/pages/get_started_page.dart'; // for GetStartedConstants
+import '../../../../core/widgets/broken_image_fallback.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,45 +22,45 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   @override
-  void initState() {
-    super.initState();
-    globalFeedNotifier.addListener(_refreshFeed);
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => di.sl<HomeBloc>()..add(HomeFetchRequested()),
+        ),
+        BlocProvider(create: (_) => di.sl<SocialBloc>()),
+      ],
+      child: const _HomePageContent(),
+    );
   }
+}
 
-  @override
-  void dispose() {
-    globalFeedNotifier.removeListener(_refreshFeed);
-    super.dispose();
-  }
-
-  void _refreshFeed() {
-    setState(() {});
-  }
+class _HomePageContent extends StatelessWidget {
+  const _HomePageContent();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.appBarTheme.backgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: Row(
           children: [
-            Text(
-              'Kippy ',
+            const Text(
+              'Kippy',
               style: TextStyle(
-                color: theme.textTheme.bodyLarge?.color,
-                fontWeight: FontWeight.w800,
-                fontSize: 22,
+                color: Colors.black87,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
                 letterSpacing: -0.5,
               ),
             ),
+            const SizedBox(width: 4),
             Container(
               width: 8,
               height: 8,
               decoration: const BoxDecoration(
-                color: GetStartedConstants.primaryColor,
+                color: Color(0xFF8DEE10),
                 shape: BoxShape.circle,
               ),
             ),
@@ -59,153 +68,165 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black),
+            icon: const Icon(Icons.notifications_none, color: Colors.black87),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.send_outlined, color: Colors.black87),
             onPressed: () {},
           ),
         ],
       ),
-      body: RefreshIndicator(
-        color: GetStartedConstants.primaryColor,
-        onRefresh: () async {
-          await Future.delayed(const Duration(seconds: 1)); // Mock refresh
+      body: BlocBuilder<HomeBloc, HomeState>(
+        builder: (context, state) {
+          if (state is HomeLoading || state is HomeInitial) {
+            return ShimmerLoadingList.feed();
+          }
+          if (state is HomeError) {
+            return ErrorStateWidget(
+              icon: Icons.wifi_off,
+              title: 'Failed to load feed',
+              message: state.message,
+              onRetry: () => context.read<HomeBloc>().add(HomeFetchRequested()),
+            );
+          }
+          if (state is HomeLoaded) {
+            return _buildLoadedFeed(context, state);
+          }
+          return const SizedBox.shrink();
         },
-        child: CustomScrollView(
-          slivers: [
-            // Suggested to Follow Section
-            SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 16,
-                      top: 16,
-                      bottom: 8,
-                    ),
-                    child: Text(
-                      'Suggested to Follow',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: theme.textTheme.bodyLarge?.color,
+      ),
+    );
+  }
+
+  Widget _buildLoadedFeed(BuildContext context, HomeLoaded state) {
+    return RefreshIndicator(
+      color: const Color(0xFF8DEE10),
+      onRefresh: () async {
+        context.read<HomeBloc>().add(HomeRefreshRequested());
+        // Wait a tick for UX
+        await Future.delayed(const Duration(milliseconds: 500));
+      },
+      child: CustomScrollView(
+        slivers: [
+          // Stories
+          if (state.stories.isNotEmpty)
+            SliverToBoxAdapter(child: _buildStories(state.stories)),
+          // Posts
+          SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              if (index >= state.posts.length) {
+                // Load more trigger
+                if (!state.hasReachedMax) {
+                  context.read<HomeBloc>().add(HomeLoadMoreRequested());
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF8DEE10),
+                        ),
                       ),
+                    ),
+                  );
+                } else {
+                  return Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Text(
+                        "You're all caught up! 🐸",
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              }
+              return AnimatedListItem(
+                index: index,
+                child: _PostCard(post: state.posts[index]),
+              );
+            }, childCount: state.posts.length + 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStories(List<Story> stories) {
+    return SizedBox(
+      height: 100,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        scrollDirection: Axis.horizontal,
+        itemCount: stories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final story = stories[index];
+          return AnimatedListItem(
+            index: index,
+            slideOffset: const Offset(0.2, 0.0),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: story.isSeen
+                          ? Colors.grey.shade300
+                          : const Color(0xFF8DEE10),
+                      width: 2,
                     ),
                   ),
-                  SizedBox(
-                    height: 120,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      itemCount: 8,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 16.0),
-                          child: Column(
-                            children: [
-                              Stack(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 30, // 60x60
-                                    backgroundColor: Colors.grey.shade200,
-                                    backgroundImage: NetworkImage(
-                                      'https://i.pravatar.cc/150?img=${index + 15}',
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: GetStartedConstants.primaryColor,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: theme.scaffoldBackgroundColor,
-                                          width: 2,
-                                        ),
-                                      ),
-                                      child: const Icon(
-                                        Icons.add,
-                                        size: 16,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                  child: story.userAvatarUrl == null
+                      ? const Icon(Icons.person)
+                      : CachedNetworkImage(
+                          imageUrl: story.userAvatarUrl!,
+                          imageBuilder: (context, imageProvider) =>
+                              CircleAvatar(
+                                radius: 28,
+                                backgroundImage: imageProvider,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'user_mock_$index',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      theme.textTheme.bodyMedium?.color ??
-                                      Colors.black,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                          placeholder: (context, url) => const CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Color(0xFFE8E8E3),
                           ),
-                        );
-                      },
-                    ),
+                          errorWidget: (context, url, error) =>
+                              const CircleAvatar(
+                                radius: 28,
+                                child: Icon(Icons.person),
+                              ),
+                        ),
+                ),
+                const SizedBox(height: 4),
+                SizedBox(
+                  width: 60,
+                  child: Text(
+                    story.username,
+                    style: const TextStyle(fontSize: 11),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            // Divider
-            SliverToBoxAdapter(
-              child: Divider(color: Colors.grey.shade200, height: 1),
-            ),
-
-            // Feed Section
-            SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final posts = globalFeedNotifier.value;
-                if (index >= posts.length) return null;
-                final post = posts[index];
-
-                return _PostCard(
-                  key: ValueKey(post['id']),
-                  index: post['id'] as int,
-                  username: post['username'] as String,
-                  imageUrl: post['imageUrl'] as String,
-                  caption: post['caption'] as String,
-                  likes: post['likes'] as int,
-                  isLiked: post['isLiked'] as bool,
-                  isSaved: post['isSaved'] as bool,
-                );
-              }, childCount: globalFeedNotifier.value.length),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
 
 class _PostCard extends StatefulWidget {
-  final int index;
-  final String username;
-  final String imageUrl;
-  final String caption;
-  final int likes;
-  final bool isLiked;
-  final bool isSaved;
+  final Post post;
 
-  const _PostCard({
-    super.key,
-    required this.index,
-    required this.username,
-    required this.imageUrl,
-    required this.caption,
-    required this.likes,
-    required this.isLiked,
-    required this.isSaved,
-  });
+  const _PostCard({required this.post});
 
   @override
   State<_PostCard> createState() => _PostCardState();
@@ -216,311 +237,336 @@ class _PostCardState extends State<_PostCard>
   bool _isLiked = false;
   bool _isSaved = false;
   int _likesCount = 0;
+  bool _showHeart = false;
 
-  // Animation for the double-tap heart
-  bool _isHeartAnimating = false;
+  late AnimationController _heartController;
+  late Animation<double> _heartAnimation;
 
   @override
   void initState() {
     super.initState();
-    _isLiked = widget.isLiked;
-    _isSaved = widget.isSaved;
-    _likesCount = widget.likes;
-  }
+    _isLiked = widget.post.isLiked;
+    _isSaved = widget.post.isBookmarked;
+    _likesCount = widget.post.likesCount;
 
-  void _doubleTapLike() {
-    setState(() {
-      _isHeartAnimating = true;
-      if (!_isLiked) {
-        _isLiked = true;
-        _likesCount++;
-        _updateGlobalState();
-      }
-    });
-
-    // Hide the heart after animation
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (mounted) {
-        setState(() {
-          _isHeartAnimating = false;
+    _heartController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _heartAnimation = Tween<double>(begin: 0.5, end: 1.2).animate(
+      CurvedAnimation(parent: _heartController, curve: Curves.elasticOut),
+    );
+    _heartController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted) setState(() => _showHeart = false);
         });
       }
     });
   }
 
+  @override
+  void dispose() {
+    _heartController.dispose();
+    super.dispose();
+  }
+
+  void _doubleTapLike() {
+    if (!_isLiked) {
+      setState(() {
+        _isLiked = true;
+        _likesCount++;
+        _showHeart = true;
+      });
+      // Dispatch like via BLoC
+      context.read<SocialBloc>().add(SocialLikePostRequested(widget.post.id));
+    } else {
+      setState(() => _showHeart = true);
+    }
+    _heartController.forward(from: 0);
+  }
+
   void _toggleLike() {
     setState(() {
       _isLiked = !_isLiked;
-      _isLiked ? _likesCount++ : _likesCount--;
+      _likesCount += _isLiked ? 1 : -1;
     });
-    _updateGlobalState();
-  }
-
-  void _toggleSave() {
-    setState(() {
-      _isSaved = !_isSaved;
-    });
-    _updateGlobalState();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _isSaved ? 'Post saved to Bookmarks' : 'Removed from Bookmarks',
-        ),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
-  void _updateGlobalState() {
-    final currentPosts = globalFeedNotifier.value;
-    final existingIndex = currentPosts.indexWhere(
-      (p) => p['id'] == widget.index,
-    );
-    if (existingIndex != -1) {
-      currentPosts[existingIndex] = {
-        ...currentPosts[existingIndex],
-        'isLiked': _isLiked,
-        'isSaved': _isSaved,
-        'likes': _likesCount,
-      };
-      globalFeedNotifier.value = List.from(currentPosts);
+    if (_isLiked) {
+      context.read<SocialBloc>().add(SocialLikePostRequested(widget.post.id));
+    } else {
+      context.read<SocialBloc>().add(SocialUnlikePostRequested(widget.post.id));
     }
+  }
+
+  void _toggleBookmark() {
+    setState(() => _isSaved = !_isSaved);
+  }
+
+  String _timeAgo(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${(diff.inDays / 7).floor()}w ago';
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      color: theme.cardColor,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Post Header
+          // Header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: NetworkImage(
-                    'https://i.pravatar.cc/150?img=${widget.index + 20}',
-                  ),
-                ),
-                const SizedBox(width: 12),
+                widget.post.userAvatarUrl == null
+                    ? const CircleAvatar(
+                        radius: 16,
+                        child: Icon(Icons.person, size: 16),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: widget.post.userAvatarUrl!,
+                        imageBuilder: (context, imageProvider) => CircleAvatar(
+                          radius: 16,
+                          backgroundImage: imageProvider,
+                        ),
+                        placeholder: (context, url) => const CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Color(0xFFE8E8E3),
+                        ),
+                        errorWidget: (context, url, error) =>
+                            const CircleAvatar(
+                              radius: 16,
+                              child: Icon(Icons.person, size: 16),
+                            ),
+                      ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.username,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: theme.textTheme.bodyLarge?.color,
+                        widget.post.username,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
                         ),
-                      ),
-                      const Text(
-                        'San Francisco, CA',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.more_horiz, color: theme.iconTheme.color),
-                  onPressed: () {},
-                ),
+                Icon(Icons.more_horiz, color: Colors.grey.shade600),
               ],
             ),
           ),
 
-          // Image / Media with Double Tap Heart effect
+          // Image
           GestureDetector(
             onDoubleTap: _doubleTapLike,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FullscreenImageViewer(
-                    imageUrl: widget.imageUrl,
-                    heroTag: 'home_post_${widget.index}',
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                AspectRatio(
+                  aspectRatio: 4 / 5,
+                  child: CachedNetworkImage(
+                    imageUrl: widget.post.imageUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) =>
+                        Container(color: const Color(0xFFE8E8E3)),
+                    errorWidget: (_, __, ___) => const BrokenImageFallback(),
                   ),
                 ),
-              );
-            },
-            child: AspectRatio(
-              aspectRatio: 4 / 5,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    color: Colors.grey.shade200,
-                    child: Hero(
-                      tag: 'home_post_${widget.index}',
-                      child: Image.network(widget.imageUrl, fit: BoxFit.cover),
-                    ),
-                  ),
-                  // Animated Large Heart
-                  AnimatedOpacity(
-                    duration: const Duration(milliseconds: 200),
-                    opacity: _isHeartAnimating ? 1.0 : 0.0,
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(
-                        begin: 0.5,
-                        end: _isHeartAnimating ? 1.2 : 0.5,
+                // Heart animation overlay
+                if (_showHeart)
+                  AnimatedBuilder(
+                    animation: _heartAnimation,
+                    builder: (context, child) => Transform.scale(
+                      scale: _heartAnimation.value,
+                      child: AnimatedOpacity(
+                        opacity: _showHeart ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: const Icon(
+                          Icons.favorite,
+                          color: Colors.white,
+                          size: 80,
+                        ),
                       ),
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.elasticOut,
-                      builder: (context, scale, child) {
-                        return Transform.scale(
-                          scale: scale,
-                          child: const Icon(
-                            Icons.favorite,
-                            color: Colors.white,
-                            size: 100,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black26,
-                                blurRadius: 20,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
           ),
 
-          // Actions Row
+          // Actions
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                // Animated small like button
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 1.0, end: _isLiked ? 1.2 : 1.0),
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.elasticOut,
-                  builder: (context, scale, child) {
-                    return Transform.scale(
-                      scale: scale,
-                      child: IconButton(
-                        icon: Icon(
-                          _isLiked ? Icons.favorite : Icons.favorite_border,
-                          color: _isLiked
-                              ? GetStartedConstants.primaryColor
-                              : theme.iconTheme.color,
-                        ),
-                        onPressed: () {
-                          // Bounce effect by resetting the tween end manually inside toggle
-                          _toggleLike();
-                        },
-                      ),
-                    );
-                  },
+                _AnimatedActionButton(
+                  icon: _isLiked ? Icons.favorite : Icons.favorite_border,
+                  color: _isLiked ? Colors.red : Colors.black87,
+                  onPressed: _toggleLike,
                 ),
-                IconButton(
-                  icon: Icon(
-                    Icons.chat_bubble_outline,
-                    color: theme.iconTheme.color,
-                  ),
+                const SizedBox(width: 12),
+                _AnimatedActionButton(
+                  icon: Icons.chat_bubble_outline,
+                  color: Colors.black87,
                   onPressed: () {
-                    // Open bottom sheet
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
-                      builder: (context) => FractionalTranslation(
-                        translation: Offset(0, 0),
-                        child: FractionallySizedBox(
-                          heightFactor: 0.85,
-                          child: const CommentBottomSheet(),
+                      builder: (_) => BlocProvider.value(
+                        value: context.read<SocialBloc>(),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.65,
+                          child: CommentBottomSheet(postId: widget.post.id),
                         ),
                       ),
                     );
                   },
                 ),
-                IconButton(
-                  icon: Icon(Icons.send_outlined, color: theme.iconTheme.color),
+                const SizedBox(width: 12),
+                _AnimatedActionButton(
+                  icon: Icons.send_outlined,
+                  color: Colors.black87,
                   onPressed: () {},
                 ),
                 const Spacer(),
-                IconButton(
-                  icon: Icon(
-                    _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                    color: _isSaved
-                        ? GetStartedConstants.primaryColor
-                        : theme.iconTheme.color,
-                  ),
-                  onPressed: _toggleSave,
+                _AnimatedActionButton(
+                  icon: _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                  color: _isSaved ? const Color(0xFF8DEE10) : Colors.black87,
+                  onPressed: _toggleBookmark,
                 ),
               ],
             ),
           ),
 
-          // Likes Info
+          // Likes count
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               '$_likesCount likes',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: theme.textTheme.bodyLarge?.color,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
 
           // Caption
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  color: theme.textTheme.bodyMedium?.color ?? Colors.black,
-                ),
-                children: [
-                  TextSpan(
-                    text: '${widget.username} ',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: theme.textTheme.bodyLarge?.color,
+          if (widget.post.caption != null && widget.post.caption!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
+                  children: [
+                    TextSpan(
+                      text: '${widget.post.username} ',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                  ),
-                  const TextSpan(text: ' '),
-                  TextSpan(text: widget.caption),
-                ],
+                    TextSpan(text: widget.post.caption!),
+                  ],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
 
-          // View Comments Link
+          // View comments
+          if (widget.post.commentsCount > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => BlocProvider.value(
+                      value: context.read<SocialBloc>(),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.65,
+                        child: CommentBottomSheet(postId: widget.post.id),
+                      ),
+                    ),
+                  );
+                },
+                child: Text(
+                  'View all ${widget.post.commentsCount} comments',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                ),
+              ),
+            ),
+
+          // Timestamp
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
-              'View all 12 comments',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-            ),
-          ),
-
-          // Time Ago
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              '2 HOURS AGO',
+              _timeAgo(widget.post.createdAt).toUpperCase(),
               style: TextStyle(
-                color: Colors.grey.shade500,
                 fontSize: 10,
+                color: Colors.grey.shade400,
                 letterSpacing: 0.5,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AnimatedActionButton extends StatefulWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onPressed;
+
+  const _AnimatedActionButton({
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+  });
+
+  @override
+  State<_AnimatedActionButton> createState() => _AnimatedActionButtonState();
+}
+
+class _AnimatedActionButtonState extends State<_AnimatedActionButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.3,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        _controller.forward(from: 0);
+        widget.onPressed();
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Icon(widget.icon, color: widget.color, size: 24),
       ),
     );
   }
